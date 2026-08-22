@@ -1,0 +1,469 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String                @id @default(uuid())
+  email               String                @unique
+  passwordHash        String
+  name                String
+  username            String                @unique
+  department          String                @default("CSE") // CSE, ECE, IT, AI & DS, Others
+  year                String                @default("1st") // 1st, 2nd, 3rd, 4th, Postgraduate
+  avatar              String?
+  bannerUrl           String?
+  bio                 String?
+  college             String?               @default("Tech Institute of Technology")
+  location            String?               @default("Bangalore, India")
+  githubUrl           String?
+  linkedinUrl         String?
+  twitterUrl          String?
+  portfolioUrl        String?
+  devpostUrl          String?
+  trustScore          Float                 @default(50.0) // Starts at 50%
+  points              Int                   @default(0)
+  finalScore          Float                 @default(0.0) // Points * (TrustScore / 100)
+  currentRank         Int                   @default(0)
+  rankChange          Int                   @default(0)
+  winsCount           Int                   @default(0)
+  is2faEnabled        Boolean               @default(false)
+  twoFactorSecret     String?
+  backupCodes         String?               // JSON array string of 10 backup codes
+  isDeleted           Boolean               @default(false)
+  deletionRequestedAt DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  // Relations
+  sessions            Session[]
+  securityEvents      SecurityEvent[]
+  projects            Project[]
+  certificates        Certificate[]
+  ledTeams            Team[]                @relation("TeamLeader")
+  teamMemberships     TeamMember[]
+  skills              UserSkill[]
+  endorsementsGiven   SkillEndorsement[]    @relation("Endorser")
+  badges              UserBadge[]
+  milestones          UserMilestone[]
+  notifications       Notification[]
+  notificationPrefs   NotificationPreference[]
+  emailNotifications  EmailNotification[]
+  integrations        Integration[]
+  savedHackathons     SavedHackathon[]
+  savedSearches       SavedSearch[]
+  searchHistories     SearchHistory[]
+  reviews             HackathonReview[]
+  privacySettings     PrivacySetting?
+  receivedInvites     TeamInvite[]          @relation("InvitedUser")
+
+  @@index([department])
+  @@index([points])
+  @@index([trustScore])
+  @@index([finalScore])
+}
+
+model Session {
+  id           String    @id @default(uuid())
+  userId       String
+  token        String    @unique
+  ipAddress    String?
+  userAgent    String?
+  device       String?
+  lastActiveAt DateTime  @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SecurityEvent {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // LOGIN, LOGOUT, 2FA_ENABLED, 2FA_DISABLED, PASSWORD_CHANGED, SESSION_REVOKED, SUSPICIOUS_LOGIN
+  description String
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Hackathon {
+  id                   String            @id @default(uuid())
+  title                String
+  slug                 String            @unique
+  platform             String            // Unstop, Devpost, HackerEarth, MLH, Kaggle
+  logoUrl              String?
+  bannerUrl            String?
+  description          String
+  websiteUrl           String
+  registrationUrl      String            // Official external redirect URL
+  locationType         String            @default("Online") // Online, Offline, Hybrid
+  city                 String?
+  country              String?           @default("India")
+  startDate            DateTime
+  endDate              DateTime
+  registrationDeadline DateTime
+  submissionDeadline   DateTime
+  prizePool            String            @default("₹1,00,000")
+  prizePoolValue       Int               @default(100000)
+  prizeBreakdown       String?           // JSON formatted text: [{"place": "1st", "amount": "₹50,000"}, ...]
+  theme                String            // AI/ML, Web Development, Blockchain, Fintech, IoT, Data Science, Cybersecurity, Open Innovation
+  duration             String            @default("48 hours") // 24 hours, 48 hours, 1 week, 2 weeks, Open-ended
+  difficulty           String            @default("Intermediate") // Beginner, Intermediate, Expert
+  department           String            @default("CSE") // CSE, ECE, IT, AI & DS, Others
+  teamSizeMin          Int               @default(1)
+  teamSizeMax          Int               @default(4)
+  participantCount     Int               @default(0)
+  rating               Float             @default(4.8)
+  judgingCriteria      String?           // JSON or bullet points
+  eligibility          String?           @default("Open to all undergraduate and postgraduate students.")
+  isFeatured           Boolean           @default(false)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  projects             Project[]
+  savedBy              SavedHackathon[]
+  reviews              HackathonReview[]
+
+  @@index([platform])
+  @@index([theme])
+  @@index([locationType])
+  @@index([difficulty])
+  @@index([department])
+}
+
+model HackathonReview {
+  id          String    @id @default(uuid())
+  hackathonId String
+  userId      String
+  rating      Int       // 1 to 5
+  comment     String
+  createdAt   DateTime  @default(now())
+
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([hackathonId])
+  @@index([userId])
+}
+
+model SavedHackathon {
+  id          String    @id @default(uuid())
+  userId      String
+  hackathonId String
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, hackathonId])
+}
+
+model Project {
+  id                  String       @id @default(uuid())
+  userId              String
+  hackathonId         String?
+  hackathonCustomName String?
+  title               String
+  tagline             String?
+  description         String
+  projectUrl          String?
+  githubUrl           String?
+  techStack           String       // JSON string array e.g. ["React", "Python", "FastAPI"]
+  isSolo              Boolean      @default(true)
+  teamId              String?
+  status              String       @default("Submitted") // Registered, Participated, Submitted, Winner
+  certificateUrl      String?
+  isVerified          Boolean      @default(false)
+  verificationDate    DateTime?
+  viewCount           Int          @default(0)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hackathon           Hackathon?   @relation(fields: [hackathonId], references: [id], onDelete: SetNull)
+  team                Team?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  certificate         Certificate?
+
+  @@index([userId])
+  @@index([status])
+  @@index([isVerified])
+}
+
+model Certificate {
+  id                  String    @id @default(uuid())
+  projectId           String    @unique
+  userId              String
+  fileUrl             String
+  rawOcrText          String?
+  extractedName       String?
+  extractedHackathon  String?
+  extractedAchievement String?  // Winner, Runner Up, 1st Place, Participant, etc.
+  extractedDate       String?
+  confidenceScore     Float     @default(0.0) // 0 - 100
+  status              String    @default("UNVERIFIED") // VERIFIED, UNVERIFIED, REJECTED
+  rejectionReason     String?
+  verifiedAt          DateTime?
+  createdAt           DateTime  @default(now())
+
+  project             Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Team {
+  id           String       @id @default(uuid())
+  name         String       @unique
+  slug         String       @unique
+  description  String?
+  logoUrl      String?
+  leaderId     String
+  department   String       @default("CSE")
+  totalPoints  Int          @default(0)
+  averageTrust Float        @default(50.0)
+  winsCount    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  leader       User         @relation("TeamLeader", fields: [leaderId], references: [id])
+  members      TeamMember[]
+  projects     Project[]
+  invites      TeamInvite[]
+
+  @@index([totalPoints])
+  @@index([averageTrust])
+  @@index([department])
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  teamId    String
+  userId    String
+  role      String   @default("MEMBER") // LEADER, MEMBER
+  status    String   @default("ACTIVE") // ACTIVE, INVITED, PENDING
+  joinedAt  DateTime @default(now())
+
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+}
+
+model TeamInvite {
+  id        String   @id @default(uuid())
+  teamId    String
+  userId    String
+  email     String
+  role      String   @default("MEMBER")
+  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt DateTime @default(now())
+
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation("InvitedUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([teamId])
+}
+
+model Skill {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  category   String      @default("Programming") // Programming, Framework, Database, Cloud, AI/ML, Security, Tools
+  userSkills UserSkill[]
+}
+
+model UserSkill {
+  id               String             @id @default(uuid())
+  userId           String
+  skillId          String
+  proficiencyLevel String             @default("Intermediate") // Beginner, Intermediate, Expert
+  endorsementCount Int                @default(0)
+  createdAt        DateTime           @default(now())
+
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill            Skill              @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  endorsements     SkillEndorsement[]
+
+  @@unique([userId, skillId])
+  @@index([userId])
+}
+
+model SkillEndorsement {
+  id          String    @id @default(uuid())
+  userSkillId String
+  endorserId  String
+  createdAt   DateTime  @default(now())
+
+  userSkill   UserSkill @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
+  endorser    User      @relation("Endorser", fields: [endorserId], references: [id], onDelete: Cascade)
+
+  @@unique([userSkillId, endorserId])
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  code        String      @unique // FIRST_STEP, FIRST_WINNER, PROJECT_MASTER, HACKATHON_CHAMPION, LEGENDARY_HACKER, PERFECT_TRUST, TEAM_PLAYER, TRUST_BUILDER, SKILL_SPECIALIST, TRUST_GUARDIAN
+  name        String
+  description String
+  icon        String
+  tier        String      @default("Bronze") // Bronze, Silver, Gold, Platinum
+  category    String      @default("General")
+  pointsAward Int         @default(30)
+  userBadges  UserBadge[]
+}
+
+model UserBadge {
+  id         String   @id @default(uuid())
+  userId     String
+  badgeId    String
+  unlockedAt DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+model Milestone {
+  id             String          @id @default(uuid())
+  code           String          @unique
+  title          String
+  description    String
+  category       String          // Projects, Wins, Points, Rank, Team, Trust
+  targetValue    Int             @default(1)
+  icon           String
+  userMilestones UserMilestone[]
+}
+
+model UserMilestone {
+  id          String    @id @default(uuid())
+  userId      String
+  milestoneId String
+  achievedAt  DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  milestone   Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, milestoneId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // PROJECT_VERIFIED, CERTIFICATE_REJECTED, RANK_CHANGED, BADGE_UNLOCKED, MILESTONE_ACHIEVED, TEAM_INVITE, TEAM_ACTIVITY, DEADLINE_REMINDER, HACKATHON_RECOMMENDATION
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model NotificationPreference {
+  id        String   @id @default(uuid())
+  userId    String
+  category  String   // PROJECT_VERIFICATION, RANK_CHANGES, ACHIEVEMENTS, TEAM_UPDATES, DEADLINES, RECOMMENDATIONS
+  inApp     Boolean  @default(true)
+  emailMode String   @default("INSTANT") // INSTANT, DAILY_DIGEST, WEEKLY_DIGEST, OFF
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@index([userId])
+}
+
+model EmailNotification {
+  id             String   @id @default(uuid())
+  userId         String
+  recipientEmail String   // Strictly user's registered email
+  subject        String
+  templateType   String
+  contentHtml    String
+  status         String   @default("SENT") // SENT, PENDING, FAILED
+  sentAt         DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([recipientEmail])
+}
+
+model Integration {
+  id               String    @id @default(uuid())
+  userId           String
+  platform         String    // DEVPOST, GITHUB, UNSTOP, HACKEREARTH, LINKEDIN, GOOGLE_DRIVE
+  isConnected      Boolean   @default(false)
+  profileUrl       String?
+  externalUsername String?
+  accessToken      String?
+  lastSyncedAt     DateTime?
+  syncedProjectsCount Int    @default(0)
+  metadata         String?   // JSON object with stars, forks, repo list, etc.
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([userId])
+}
+
+model SavedSearch {
+  id          String   @id @default(uuid())
+  userId      String
+  query       String
+  filters     String?  // JSON stringified filter state
+  alertOnNew  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SearchHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  query     String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PrivacySetting {
+  id                     String   @id @default(uuid())
+  userId                 String   @unique
+  profileVisibility      String   @default("PUBLIC") // PUBLIC, PRIVATE, HIDDEN
+  emailVisibility        Boolean  @default(false)
+  projectsVisibility     Boolean  @default(true)
+  achievementsVisibility Boolean  @default(true)
+  rankVisibility         Boolean  @default(true)
+  skillsVisibility       Boolean  @default(true)
+  shareWithRecruiters    Boolean  @default(true)
+  shareWithOrganizers    Boolean  @default(true)
+  updatedAt              DateTime @updatedAt
+
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
