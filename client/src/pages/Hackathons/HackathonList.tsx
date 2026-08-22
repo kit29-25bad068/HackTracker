@@ -92,7 +92,7 @@ const HackathonList: React.FC = () => {
     try {
       setIsSyncing(true);
       addToast('info', 'Refreshing Feed', 'Loading latest aggregated hackathons from Devpost, Unstop, DoraHacks, Devfolio, and MLH...');
-      const res = await api.post('/hackathons/sync-all');
+      const res = await api.post('/hackathons/sync-all', { forceFreshRun: true });
       addToast('success', 'Feed Updated', res.data.message || `Refreshed ${res.data.syncedCount || 78} live hackathons!`);
       await fetchHackathons();
     } catch (err: any) {

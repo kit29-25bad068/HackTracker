@@ -113,7 +113,9 @@ export class ApifyHackathonAggregatorService {
     const now = Date.now();
     const timeSinceLastSync = this.lastSyncTimestamp ? now - this.lastSyncTimestamp.getTime() : Infinity;
 
-    if (!forceFreshRun && timeSinceLastSync < this.COOLDOWN_MS) {
+    const totalInDb = await prisma.hackathon.count();
+
+    if (!forceFreshRun && totalInDb > 0 && timeSinceLastSync < this.COOLDOWN_MS) {
       console.log('⚡ Free-Tier Cache Hit: Returning live database catalog without calling Apify.');
       const [devpost, mlh, dorahacks, devfolio, unstop, total] = await Promise.all([
         prisma.hackathon.count({ where: { platform: 'Devpost' } }),
