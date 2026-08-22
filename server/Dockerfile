@@ -12,6 +12,9 @@ RUN npm install
 
 COPY . .
 
+# Grant full execute permissions to all binaries
+RUN chmod -R +x node_modules/.bin || true
+
 RUN npx prisma generate
 RUN npx tsc
 
