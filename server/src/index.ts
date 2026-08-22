@@ -29,6 +29,20 @@ const PORT = process.env.PORT || 5000;
 // Initialize Automated Daily Midnight Sync Cron Cycle (00:00:00)
 ApifyHackathonAggregatorService.initCronSync();
 
+// Auto-bootstrap hackathons on initial cloud deployment if database is empty
+(async () => {
+  try {
+    const count = await prisma.hackathon.count();
+    console.log(`📊 [Database Status] Hackathons in database: ${count}`);
+    if (count === 0) {
+      console.log('🚀 [Auto-Bootstrap] Database is empty. Running initial 5-platform hackathon aggregator sync...');
+      await ApifyHackathonAggregatorService.syncAllPlatforms(undefined, true);
+    }
+  } catch (err: any) {
+    console.warn('⚠️ [Startup Auto-Sync Notice]:', err.message);
+  }
+})();
+
 
 // Middleware
 app.use(cors({ origin: true, credentials: true }));
