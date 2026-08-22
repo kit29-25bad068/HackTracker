@@ -1,11 +1,11 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "npm-9_x"]
+nixPkgs = ["nodejs_20", "npm-9_x", "openssl"]
 
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm install --ignore-scripts"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["npx prisma generate", "npx tsc"]
 
 [start]
-cmd = "npm start"
+cmd = "node dist/index.js"

@@ -2,10 +2,10 @@
 nixPkgs = ["nodejs_20", "npm-9_x"]
 
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm install --ignore-scripts"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["npx vite build"]
 
 [start]
 cmd = "npm run preview -- --host 0.0.0.0 --port $PORT"
