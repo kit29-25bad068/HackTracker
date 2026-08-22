@@ -1,17 +1,18 @@
-# 🌍 HackTracker Global Production Deployment Guide
+# 🚂 HackTracker Global Deployment Guide for Railway.app
 
-Deploy HackTracker live to the world with **$0 hosting cost** using **Vercel** (Frontend) + **Render.com / Railway** (Backend).
+Deploy HackTracker live on **[Railway.app](https://railway.app)** with automated CI/CD, free SSL, and high performance.
 
 ---
 
-## ⚡ Quick 3-Step Free Deployment
+## ⚡ Quick 3-Step Railway Deployment
 
-### 1️⃣ Push Code to GitHub
-Open your terminal in the project directory (`hacktracker`) and run:
+### 1️⃣ Push Your Project to GitHub
+
+If you haven't pushed your code to GitHub yet, run these commands in your project folder (`hacktracker`):
 ```bash
 git init
 git add .
-git commit -m "Initial commit - HackTracker Production"
+git commit -m "Deploy HackTracker to Railway"
 git branch -M main
 git remote add origin https://github.com/YOUR_GITHUB_USERNAME/hacktracker.git
 git push -u origin main
@@ -19,46 +20,46 @@ git push -u origin main
 
 ---
 
-### 2️⃣ Deploy the Backend Server (on Render.com - 100% Free)
-1. Go to **[Render.com](https://render.com)** and sign in with GitHub.
-2. Click **"New +"** $\rightarrow$ **"Web Service"**.
-3. Connect your `hacktracker` GitHub repository.
-4. Configure the service:
-   - **Root Directory**: `server`
-   - **Environment**: `Node`
-   - **Build Command**: `npm install && npm run build`
-   - **Start Command**: `npm start`
-   - **Instance Type**: `Free`
-5. Add Environment Variables:
-   - `NODE_ENV`: `production`
+### 2️⃣ Deploy Backend Server on Railway
+
+1. Go to **[Railway.app](https://railway.app)** and log in with your GitHub account.
+2. Click **"New Project"** $\rightarrow$ select **"Deploy from GitHub repo"**.
+3. Select your **`hacktracker`** repository.
+4. Click **"Add variables"** (or open the **Variables** tab for the service) and add:
    - `PORT`: `5000`
-   - `JWT_SECRET`: `your_super_secret_production_key_123`
+   - `NODE_ENV`: `production`
+   - `JWT_SECRET`: `hacktracker_super_secret_railway_key_2026`
    - `DATABASE_URL`: `file:./dev.db`
    - `APIFY_API_TOKEN`: `apify_api_LsL1kWSh2sxL5xzRHMVBQWEFFJaDM04bNdkp`
-6. Click **"Create Web Service"**.
-7. Once deployed, copy your backend URL (e.g. `https://hacktracker-api.onrender.com`).
+5. In the **Settings** tab of the service:
+   - Under **Root Directory**, enter: `server`
+   - Under **Build Command**, enter: `npm install && npm run build`
+   - Under **Start Command**, enter: `npm start`
+   - Under **Networking**, click **"Generate Domain"** (e.g. `hacktracker-production-xyz.up.railway.app`).
+6. Copy your generated public backend domain (e.g. `https://hacktracker-production-xyz.up.railway.app`).
 
 ---
 
-### 3️⃣ Deploy the Frontend UI (on Vercel - 100% Free)
-1. Go to **[Vercel.com](https://vercel.com)** and sign in with GitHub.
-2. Click **"Add New..."** $\rightarrow$ **"Project"**.
-3. Import your `hacktracker` GitHub repository.
-4. Configure the project:
-   - **Framework Preset**: `Vite`
-   - **Root Directory**: Click `Edit` and select `client`
-5. Add Environment Variable:
-   - `VITE_API_URL`: `https://hacktracker-api.onrender.com/api` *(Your Render backend URL with `/api`)*
-6. Click **"Deploy"**.
+### 3️⃣ Deploy Frontend UI (on Vercel or Railway)
 
-🎉 **Your website is now LIVE on the global internet!** (e.g. `https://hacktracker.vercel.app` or your custom domain).
+#### Option A: On Vercel (Recommended for instant global CDN speeds)
+1. Go to **[Vercel.com](https://vercel.com)** $\rightarrow$ **"Add New..."** $\rightarrow$ **"Project"**.
+2. Select your `hacktracker` repository.
+3. Set **Root Directory** to `client`.
+4. Add Environment Variable:
+   - `VITE_API_URL`: `https://hacktracker-production-xyz.up.railway.app/api` *(Your Railway domain with `/api`)*
+5. Click **"Deploy"**.
+
+#### Option B: On Railway as a second service
+1. In your Railway project canvas, click **"+ Create"** $\rightarrow$ **"GitHub Repo"** $\rightarrow$ select `hacktracker`.
+2. In Settings:
+   - Set **Root Directory**: `client`
+   - Set **Build Command**: `npm install && npm run build`
+   - Set **Start Command**: `npm run preview`
+   - Under Variables: add `VITE_API_URL=https://hacktracker-production-xyz.up.railway.app/api`
+   - Under Networking: click **"Generate Domain"**.
 
 ---
 
-## 🗄️ Optional: Cloud Database (PostgreSQL on Neon.tech - Free)
-If you want persistent multi-region PostgreSQL without SQLite file locking:
-1. Create a free database at **[Neon.tech](https://neon.tech)**.
-2. Copy your connection string (`postgresql://user:pass@ep-xyz.neon.tech/neondb?sslmode=require`).
-3. Set `DATABASE_URL` in your Render backend settings.
-4. In `server/prisma/schema.prisma`, change `provider = "sqlite"` to `provider = "postgresql"`.
-5. Run `npx prisma db push` on deployment.
+### 🎉 Your Global HackTracker Website is Live!
+Any updates you push to GitHub will now automatically rebuild and deploy to Railway in real-time.
